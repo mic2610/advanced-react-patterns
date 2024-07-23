@@ -9,8 +9,8 @@ import {dequal} from 'dequal'
 import * as userClient from '../user-client'
 import {useAuth} from '../auth-context'
 
-const UserContext = React.createContext()
-UserContext.displayName = 'UserContext'
+const UserContext = React.createContext();
+UserContext.displayName = 'UserContext';
 
 function userReducer(state, action) {
   switch (action.type) {
@@ -60,20 +60,29 @@ function UserProvider({children}) {
     error: null,
     storedUser: user,
     user,
-  })
-  const value = [state, dispatch]
-  return <UserContext.Provider value={value}>{children}</UserContext.Provider>
+  });
+
+  const value = [state, dispatch];
+  return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
 }
 
 function useUser() {
-  const context = React.useContext(UserContext)
+  const context = React.useContext(UserContext);
   if (context === undefined) {
     throw new Error(`useUser must be used within a UserProvider`)
   }
-  return context
+
+  return context;
 }
 
 // 🐨 add a function here called `updateUser`
+function updateUser(dispatch, user, updates) {
+  dispatch({type: 'start update', updates})
+  userClient.updateUser(user, updates).then(
+    updatedUser => dispatch({type: 'finish update', updatedUser}),
+    error => dispatch({type: 'fail update', error}),
+  )
+}
 // Then go down to the `handleSubmit` from `UserSettings` and put that logic in
 // this function. It should accept: dispatch, user, and updates
 
@@ -82,27 +91,23 @@ function useUser() {
 // src/screens/user-profile.js
 // import {UserProvider, useUser} from './context/user-context'
 function UserSettings() {
-  const [{user, status, error}, userDispatch] = useUser()
+  const [{user, status, error}, userDispatch] = useUser();
 
-  const isPending = status === 'pending'
-  const isRejected = status === 'rejected'
+  const isPending = status === 'pending';
+  const isRejected = status === 'rejected';
 
-  const [formState, setFormState] = React.useState(user)
+  const [formState, setFormState] = React.useState(user);
 
-  const isChanged = !dequal(user, formState)
+  const isChanged = !dequal(user, formState);
 
   function handleChange(e) {
-    setFormState({...formState, [e.target.name]: e.target.value})
+    setFormState({...formState, [e.target.name]: e.target.value});
   }
 
   function handleSubmit(event) {
-    event.preventDefault()
-    // 🐨 move the following logic to the `updateUser` function you create above
-    userDispatch({type: 'start update', updates: formState})
-    userClient.updateUser(user, formState).then(
-      updatedUser => userDispatch({type: 'finish update', updatedUser}),
-      error => userDispatch({type: 'fail update', error}),
-    )
+    event.preventDefault();
+
+    updateUser(userDispatch, user, formState);
   }
 
   return (
